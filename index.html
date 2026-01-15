@@ -25,12 +25,7 @@
     <script src="https://js.arcgis.com/4.28/"></script>
     <script>
         let view;
-        
-        // Embedded GeoJSON data
-        const geoJSONData = {
-            "Sport_Clubs": {"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:32640"}},"features":[{"type":"Feature","id":0,"geometry":{"type":"Point","coordinates":[346701.76740000024,2812381.9697999991]},"properties":{"FID":0,"city":"Ajman","name_ar":"مركز عجمان للشباب","name_en":"Ajman Youth Center","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"+97166081111","fax":" ","email":"www.uaeyouthsports.com","website":" ","pobox":" ","x":25.420464580000001,"y":55.475723340000002}},{"type":"Feature","id":1,"geometry":{"type":"Point","coordinates":[346063.50349999964,2811829.4778000005]},"properties":{"FID":1,"city":"Ajman","name_ar":"نادي عجمان للشطرنج","name_en":"Ajman Chess Club","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"+97167421388","fax":"06-7425248","email":" ","website":"www.ajmanchess.com","pobox":" ","x":25.415411089999999,"y":55.469441719999999}},{"type":"Feature","id":2,"geometry":{"type":"Point","coordinates":[346601.22549999971,2812392.0240000002]},"properties":{"FID":2,"city":"Ajman","name_ar":"مركز كواترو الرياضي","name_en":"Quattro Sports Centre","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"+971551902200","fax":" ","email":" ","website":" ","pobox":" ","x":25.420544970000002,"y":55.47472277}},{"type":"Feature","id":3,"geometry":{"type":"Point","coordinates":[352439.5577999996,2806153.8552999999]},"properties":{"FID":3,"city":"Ajman","name_ar":"مضمار التله لسباق الهجن","name_en":"Talla Camel Race Track","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"+97167437774","fax":" ","email":" ","website":" ","pobox":" ","x":25.364820000000002,"y":55.533439999999999}},{"type":"Feature","id":4,"geometry":{"type":"Point","coordinates":[347759.44000000041,2810432.4199999999]},"properties":{"FID":4,"city":"Ajman","name_ar":"نادي الفروسية","name_en":"Ajman Stud Farm","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"+97167691333","fax":" ","email":"info@ajmanstud.com","website":"www.ajmanstud.com","pobox":" ","x":25.402973849999999,"y":55.48645681}},{"type":"Feature","id":5,"geometry":{"type":"Point","coordinates":[346182.4319000002,2811735.3094999995]},"properties":{"FID":5,"city":"Ajman","name_ar":"جمعية عجمان للتنمية الاجتم","name_en":"Ajman Society of Social & Cultural Development","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"7403911|506302208","fax":" ","email":"ajman.social@gmail.com","website":" ","pobox":" ","x":25.414573310000002,"y":55.470634590000003}},{"type":"Feature","id":6,"geometry":{"type":"Point","coordinates":[344148.46729999967,2809215.9397]},"properties":{"FID":6,"city":"Ajman","name_ar":"نادي عجمان الثقافي الرياضي","name_en":"Ajman Culture & Sport Club","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":"+97167422441","fax":"06-7444244","email":"info@ajmanclub.ae","website":"www.ajmanclub.ae","pobox":"85","x":25.39161846,"y":55.450707819999998}},{"type":"Feature","id":7,"geometry":{"type":"Point","coordinates":[354607.38963248534,2812007.5890694009]},"properties":{"FID":7,"city":"Ajman","name_ar":"نادي الشرطة للرياضة والرما","name_en":" ","Cat_ar":"أندية رياضية أو ثقافية","Cat_en":"Clubs","phone":" ","fax":" ","email":" ","website":" ","pobox":" ","x":0,"y":0}}]}
-        };
-        
+
         require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Expand", "esri/PopupTemplate"], 
         function(Map, MapView, FeatureLayer, LayerList, Legend, Expand, PopupTemplate) {
             const map = new Map({
@@ -44,126 +39,122 @@
                 zoom: 14
             });
 
-            // Load features from embedded data
-            const featureNames = Object.keys(geoJSONData);
+            // Load GeoJSON layers from manifest file
+            async function loadGeoJSONLayers() {
+                try {
+                    // Fetch the manifest file
+                    const manifestResponse = await fetch('./manifest.json');
+                    const manifest = await manifestResponse.json();
 
-            featureNames.forEach(fileName => {
-                const iconPath = `${fileName}.svg`;
-                const geojson = geoJSONData[fileName];
+                    // Load each GeoJSON file as a layer
+                    for (const fileInfo of manifest.layers) {
+                        try {
+                            const geojsonResponse = await fetch(fileInfo.path);
+                            const geojson = await geojsonResponse.json();
 
-                // Create dynamic popup template that works with any feature
-                const popupTemplate = new PopupTemplate({
-                    title: "{name_en}",
-                    content: [
-                        {
-                            type: "fields",
-                            fieldInfos: [
-                                {
-                                    fieldName: "name_ar",
-                                    label: "الاسم العربي"
+                            // Create dynamic popup template
+                            const popupTemplate = new PopupTemplate({
+                                title: "{name_en}",
+                                content: [
+                                    {
+                                        type: "fields",
+                                        fieldInfos: [
+                                            { fieldName: "name_ar", label: "الاسم العربي" },
+                                            { fieldName: "name_en", label: "English Name" },
+                                            { fieldName: "Cat_en", label: "Category" },
+                                            { fieldName: "Cat_ar", label: "التصنيف" },
+                                            { fieldName: "city", label: "City" },
+                                            { fieldName: "phone", label: "Phone" },
+                                            { fieldName: "email", label: "Email" },
+                                            { fieldName: "website", label: "Website" }
+                                        ]
+                                    }
+                                ]
+                            });
+
+                            // Convert GeoJSON features to graphics
+                            const graphics = geojson.features.map((feature, index) => ({
+                                geometry: {
+                                    type: "point",
+                                    x: feature.properties.y || feature.properties.longitude || 0,
+                                    y: feature.properties.x || feature.properties.latitude || 0
                                 },
-                                {
-                                    fieldName: "name_en",
-                                    label: "English Name"
-                                },
-                                {
-                                    fieldName: "Cat_en",
-                                    label: "Category"
-                                },
-                                {
-                                    fieldName: "Cat_ar",
-                                    label: "التصنيف"
-                                },
-                                {
-                                    fieldName: "city",
-                                    label: "City"
-                                },
-                                {
-                                    fieldName: "phone",
-                                    label: "Phone"
-                                },
-                                {
-                                    fieldName: "email",
-                                    label: "Email"
-                                },
-                                {
-                                    fieldName: "website",
-                                    label: "Website"
+                                attributes: {
+                                    OBJECTID: feature.id || index,
+                                    ...feature.properties
                                 }
-                            ]
-                        }
-                    ]
-                });
+                            }));
 
-                // Convert GeoJSON features to graphics using x,y properties (lat/lon)
-                const graphics = geojson.features.map((feature, index) => ({
-                    geometry: {
-                        type: "point",
-                        x: feature.properties.y,
-                        y: feature.properties.x
-                    },
-                    attributes: {
-                        OBJECTID: feature.id || index,
-                        ...feature.properties
-                    }
-                }));
+                            // Create FeatureLayer
+                            const layer = new FeatureLayer({
+                                source: graphics,
+                                objectIdField: "OBJECTID",
+                                title: fileInfo.name,
+                                popupTemplate: popupTemplate,
+                                fields: [
+                                    { name: "OBJECTID", type: "oid" },
+                                    { name: "name_en", type: "string" },
+                                    { name: "name_ar", type: "string" },
+                                    { name: "Cat_en", type: "string" },
+                                    { name: "Cat_ar", type: "string" },
+                                    { name: "city", type: "string" },
+                                    { name: "phone", type: "string" },
+                                    { name: "email", type: "string" },
+                                    { name: "website", type: "string" }
+                                ],
+                                renderer: {
+                                    type: "simple",
+                                    symbol: {
+                                        type: "picture-marker",
+                                        url: `./Features/Icons/${fileInfo.name}.svg`,
+                                        width: "28px",
+                                        height: "28px"
+                                    }
+                                }
+                            });
 
-                // Create FeatureLayer from embedded data
-                const layer = new FeatureLayer({
-                    source: graphics,
-                    objectIdField: "OBJECTID",
-                    title: fileName,
-                    popupTemplate: popupTemplate,
-                    fields: [
-                        { name: "OBJECTID", type: "oid" },
-                        { name: "name_en", type: "string" },
-                        { name: "name_ar", type: "string" },
-                        { name: "Cat_en", type: "string" },
-                        { name: "Cat_ar", type: "string" },
-                        { name: "city", type: "string" },
-                        { name: "phone", type: "string" },
-                        { name: "email", type: "string" },
-                        { name: "website", type: "string" }
-                    ],
-                    renderer: {
-                        type: "simple",
-                        symbol: {
-                            type: "picture-marker",
-                            url: iconPath,
-                            width: "28px",
-                            height: "28px"
+                            map.add(layer);
+                            console.log(`Loaded layer: ${fileInfo.name}`);
+                        } catch (e) {
+                            console.log(`Error loading ${fileInfo.path}: ${e.message}`);
                         }
                     }
-                });
 
-                map.add(layer);
+                    // Add LayerList widget
+                    const layerList = new LayerList({
+                        view: view
+                    });
+
+                    const layerListExpand = new Expand({
+                        view: view,
+                        content: layerList,
+                        expanded: false
+                    });
+
+                    view.ui.add(layerListExpand, "top-right");
+
+                    // Add Legend widget
+                    const legend = new Legend({
+                        view: view
+                    });
+
+                    const legendExpand = new Expand({
+                        view: view,
+                        content: legend,
+                        expanded: false
+                    });
+
+                    view.ui.add(legendExpand, "bottom-left");
+
+                } catch (error) {
+                    console.error("Error loading GeoJSON layers:", error);
+                }
+            }
+
+            // Load all layers when view is ready
+            view.when(function() {
+                loadGeoJSONLayers();
             });
-
-            // Add LayerList widget in expand
-            const layerList = new LayerList({
-                view: view
-            });
-
-            const layerListExpand = new Expand({
-                view: view,
-                content: layerList,
-                expanded: false
-            });
-
-            view.ui.add(layerListExpand, "top-right");
-
-            // Add Legend widget in expand
-            const legend = new Legend({
-                view: view
-            });
-
-            const legendExpand = new Expand({
-                view: view,
-                content: legend,
-                expanded: false
-            });
-
-            view.ui.add(legendExpand, "bottom-left");
         });
     </script>
 </body>

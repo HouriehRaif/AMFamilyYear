@@ -1,0 +1,8 @@
+{
+  "layers": [
+    {
+      "path": "./Features/GeoJSON/Sport_Clubs.geojson",
+      "name": "Sport_Clubs"
+    }
+  ]
+}
