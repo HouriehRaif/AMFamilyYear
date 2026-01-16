@@ -1,8 +1,15 @@
 {
   "layers": [
-    {
-      "path": "./Features/GeoJSON/Sport_Clubs.geojson",
-      "name": "Sport_Clubs"
-    }
+    { "path": "./Features/GeoJSON/Hospitals.geojson", "name": "Hospitals", "category": "Family Services" },
+    { "path": "./Features/GeoJSON/Shopping_Centers.geojson", "name": "Shopping_Centers", "category": "Family Services" },
+    { "path": "./Features/GeoJSON/Nurseries.geojson", "name": "Nurseries", "category": "Family Services" },
+    { "path": "./Features/GeoJSON/Family_Psychological_Centers.geojson", "name": "Family_Psychological_Centers", "category": "Family Services" },
+    { "path": "./Features/GeoJSON/Universities.geojson", "name": "Universities", "category": "Family Services" },
+
+    { "path": "./Features/GeoJSON/Sport_Clubs.geojson", "name": "Sport_Clubs", "category": "Quality of Life" },
+    { "path": "./Features/GeoJSON/Parks.geojson", "name": "Parks", "category": "Quality of Life" },
+    { "path": "./Features/GeoJSON/Running_Cycling_Track.geojson", "name": "Running_Cycling_Track", "category": "Quality of Life" },
+
+    { "path": "./Features/GeoJSON/Neighborhood_Councils.geojson", "name": "Neighborhood_Councils", "category": "Family Cohesion" }
   ]
 }

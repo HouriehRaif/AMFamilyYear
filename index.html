@@ -1,161 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajman Map</title>
-    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            font-family: Avenir Next, W04, sans-serif;
-        }
-        #viewDiv {
-            height: 100%;
-            width: 100%;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ajman Map</title>
+
+  <!-- ArcGIS -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.28/"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./Index.css" />
+
 </head>
-<body>
-    <div id="viewDiv"></div>
-    
-    <script src="https://js.arcgis.com/4.28/"></script>
-    <script>
-        let view;
+<body id="appBody" class="h-screen w-screen overflow-hidden bg-slate-50">
+  <div class="h-full w-full flex flex-col">
+    <!-- MAP -->
+    <div id="mapContainer" class="basis-3/4 min-h-0 relative">
+      <div id="viewDiv" class="h-full w-full"></div>
+        <button id="panelToggleBtn" class="map-fab">
+            <span id="panelToggleText">▲</span>
+        </button>
+        <button id="popupLangBtn" type="button" class="map-fab map-fab-right">
+            <span id="popupLangBtnText">AR</span>
+        </button>
+    </div>
 
-        require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Expand", "esri/PopupTemplate"], 
-        function(Map, MapView, FeatureLayer, LayerList, Legend, Expand, PopupTemplate) {
-            const map = new Map({
-                basemap: "satellite"
-            });
+    <!-- CONTROLS PANEL -->
+    <div id="panelContainer" class="basis-1/4 min-h-0 border-t border-slate-200 bg-white">
+      <div class="h-full w-full flex flex-col">
+        <div class="px-3 py-3 min-h-0 flex-1">
+          <div class="h-full rounded-2xl border border-slate-200 bg-white overflow-hidden">
+            <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2">
+                <div class="flex-1 min-w-0">
+                    <div id="categoryTabs" class="w-full flex items-stretch gap-1"></div>
+                </div>
+            </div>
+            <div id="panelControls" class="h-[calc(100%-41px)] overflow-auto p-2">
+              <!-- Index.js fills this -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            view = new MapView({
-                container: "viewDiv",
-                map: map,
-                center: [55.52737998962385, 25.402667492387888],
-                zoom: 14
-            });
-
-            // Load GeoJSON layers from manifest file
-            async function loadGeoJSONLayers() {
-                try {
-                    // Fetch the manifest file
-                    const manifestResponse = await fetch('./manifest.json');
-                    const manifest = await manifestResponse.json();
-
-                    // Load each GeoJSON file as a layer
-                    for (const fileInfo of manifest.layers) {
-                        try {
-                            const geojsonResponse = await fetch(fileInfo.path);
-                            const geojson = await geojsonResponse.json();
-
-                            // Create dynamic popup template
-                            const popupTemplate = new PopupTemplate({
-                                title: "{name_en}",
-                                content: [
-                                    {
-                                        type: "fields",
-                                        fieldInfos: [
-                                            { fieldName: "name_ar", label: "الاسم العربي" },
-                                            { fieldName: "name_en", label: "English Name" },
-                                            { fieldName: "Cat_en", label: "Category" },
-                                            { fieldName: "Cat_ar", label: "التصنيف" },
-                                            { fieldName: "city", label: "City" },
-                                            { fieldName: "phone", label: "Phone" },
-                                            { fieldName: "email", label: "Email" },
-                                            { fieldName: "website", label: "Website" }
-                                        ]
-                                    }
-                                ]
-                            });
-
-                            // Convert GeoJSON features to graphics
-                            const graphics = geojson.features.map((feature, index) => ({
-                                geometry: {
-                                    type: "point",
-                                    x: feature.properties.y || feature.properties.longitude || 0,
-                                    y: feature.properties.x || feature.properties.latitude || 0
-                                },
-                                attributes: {
-                                    OBJECTID: feature.id || index,
-                                    ...feature.properties
-                                }
-                            }));
-
-                            // Create FeatureLayer
-                            const layer = new FeatureLayer({
-                                source: graphics,
-                                objectIdField: "OBJECTID",
-                                title: fileInfo.name,
-                                popupTemplate: popupTemplate,
-                                fields: [
-                                    { name: "OBJECTID", type: "oid" },
-                                    { name: "name_en", type: "string" },
-                                    { name: "name_ar", type: "string" },
-                                    { name: "Cat_en", type: "string" },
-                                    { name: "Cat_ar", type: "string" },
-                                    { name: "city", type: "string" },
-                                    { name: "phone", type: "string" },
-                                    { name: "email", type: "string" },
-                                    { name: "website", type: "string" }
-                                ],
-                                renderer: {
-                                    type: "simple",
-                                    symbol: {
-                                        type: "picture-marker",
-                                        url: `./Features/Icons/${fileInfo.name}.svg`,
-                                        width: "28px",
-                                        height: "28px"
-                                    }
-                                }
-                            });
-
-                            map.add(layer);
-                            console.log(`Loaded layer: ${fileInfo.name}`);
-                        } catch (e) {
-                            console.log(`Error loading ${fileInfo.path}: ${e.message}`);
-                        }
-                    }
-
-                    // Add LayerList widget
-                    const layerList = new LayerList({
-                        view: view
-                    });
-
-                    const layerListExpand = new Expand({
-                        view: view,
-                        content: layerList,
-                        expanded: false
-                    });
-
-                    view.ui.add(layerListExpand, "top-right");
-
-                    // Add Legend widget
-                    const legend = new Legend({
-                        view: view
-                    });
-
-                    const legendExpand = new Expand({
-                        view: view,
-                        content: legend,
-                        expanded: false
-                    });
-
-                    view.ui.add(legendExpand, "bottom-left");
-
-                } catch (error) {
-                    console.error("Error loading GeoJSON layers:", error);
-                }
-            }
-
-            // Load all layers when view is ready
-            view.when(function() {
-                loadGeoJSONLayers();
-            });
-        });
-    </script>
+  <script src="./Index.js"></script>
 </body>
+
 </html>
