@@ -80,7 +80,7 @@ require([
     const badge = document.getElementById("langBadge");
     if (badge) badge.textContent = "Popup: " + (isAr ? "AR" : "EN");
 
-    if (view && view.popup) view.popup.close();
+    if (view && view.popup) view.closePopup();
 
     const body = document.getElementById("appBody");
     if (body) {
@@ -127,7 +127,7 @@ function applyCategoryToMap() {
     });
 
     // Optional: close popup to avoid showing results from hidden layers
-    if (view && view.popup) view.popup.close();
+    if (view && view.popup) view.closePopup();
 }
 
   function getCategoryLabel(cat) {
