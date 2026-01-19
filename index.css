@@ -26,12 +26,19 @@ html, body { margin:0; padding:0; height:100%; width:100%; }
     border-top: 0;
     border-left: 1px solid rgb(226 232 240);
   }
+  #panelToggleBtn {
+    top: 50%;
+    bottom: auto;
+    left: auto;        /* we will set left/right via JS inline style */
+    right: auto;       /* we will set left/right via JS inline style */
+    transform: translateY(-50%);
+  }
 }
 
 
 .map-fab{
   position:absolute;
-  bottom:12px;
+  bottom:14px;
   z-index:9999;
 
   width:44px;
@@ -72,11 +79,6 @@ html, body { margin:0; padding:0; height:100%; width:100%; }
   transform:translateX(-50%);
 }
 
-/* Bottom-right (language) */
-.map-fab-right{
-  right:14px;
-}
-
 /* When Arabic: flip layout direction */
 .rtl { direction: rtl; text-align: right; }
 
@@ -98,7 +100,7 @@ html, body { margin:0; padding:0; height:100%; width:100%; }
 .panel-toggle-btn{
   position:absolute;
   left:50%;
-  bottom:12px;
+  bottom:14px;
   transform:translateX(-50%);
   z-index:9999;
 
@@ -127,8 +129,8 @@ html, body { margin:0; padding:0; height:100%; width:100%; }
 /* Bottom-left info button */
 .map-fab-left-bottom {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
+  bottom: 14px;
+  left: 14px;
   z-index: 20;
 }
 
@@ -136,7 +138,7 @@ html, body { margin:0; padding:0; height:100%; width:100%; }
 .info-popup {
   position: absolute;
   bottom: 64px;   /* above button */
-  left: 16px;
+  left: 14px;
   z-index: 30;
 }
 

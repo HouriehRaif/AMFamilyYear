@@ -221,6 +221,7 @@ async function loadDistrictsMainMapLayer() {
       districtsLayerMain.labelsVisible = true;
     }
 
+    if (typeof window.syncPanelToggle === "function") window.syncPanelToggle();
     renderUnifiedControls();
   }
 
@@ -565,33 +566,92 @@ function applyCategoryToMap() {
   await loadGeoJSONLayers();          // your manifest-driven POIs
 });
 });
-
-// ---- Bottom panel toggle button ----
+// ---- Panel toggle button (portrait + landscape, RTL/LTR aware) ----
 const mapContainer = document.getElementById("mapContainer");
 const panel = document.getElementById("panelContainer");
 const toggleBtn = document.getElementById("panelToggleBtn");
 const toggleText = document.getElementById("panelToggleText");
 
-let panelVisible = true;             
-if (toggleText) toggleText.textContent = "▼";   // arrow points down when panel is shown
+let panelVisible = true;
+
+function isLandscape() {
+  return window.innerWidth > window.innerHeight;
+}
+
+function isRtl() {
+  const dir = document.body.getAttribute("dir");
+  if (dir) return dir.toLowerCase() === "rtl";
+  return document.body.classList.contains("rtl");
+}
+
+function syncToggleUI() {
+  if (!toggleBtn || !toggleText) return;
+
+  const landscape = isLandscape();
+  const rtl = isRtl();
+
+  // Reset inline positioning so portrait uses your CSS as-is
+  toggleBtn.style.left = "";
+  toggleBtn.style.right = "";
+  toggleBtn.style.top = "";
+  toggleBtn.style.bottom = "";
+  toggleBtn.style.transform = "";
+
+  if (landscape) {
+    // Center vertically and attach to the side based on language direction
+    toggleBtn.style.top = "50%";
+    toggleBtn.style.bottom = "auto";
+    toggleBtn.style.transform = "translateY(-50%)";
+
+    if (rtl) {
+      toggleBtn.style.left = "14px";
+      toggleBtn.style.right = "auto";
+      // Visible = collapse toward left; Hidden = expand from left
+      toggleText.textContent = panelVisible ? "◀" : "▶";
+    } else {
+      toggleBtn.style.right = "14px";
+      toggleBtn.style.left = "auto";
+      // Visible = collapse toward right; Hidden = expand from right
+      toggleText.textContent = panelVisible ? "▶" : "◀";
+    }
+  } else {
+    // Portrait: keep center-bottom from CSS; use up/down arrows
+    toggleText.textContent = panelVisible ? "▼" : "▲";
+  }
+}
+
+function applyPanelState() {
+  if (!panel || !mapContainer) return;
+
+  if (panelVisible) {
+    panel.style.display = "block";
+    mapContainer.classList.remove("basis-full");
+    mapContainer.classList.add("basis-3/4");
+  } else {
+    panel.style.display = "none";
+    mapContainer.classList.remove("basis-3/4");
+    mapContainer.classList.add("basis-full");
+  }
+
+  syncToggleUI();
+}
+
+// Initial state
+applyPanelState();
 
 if (toggleBtn && panel && mapContainer) {
   toggleBtn.addEventListener("click", function () {
     panelVisible = !panelVisible;
-
-    if (panelVisible) {
-      panel.style.display = "block";
-      mapContainer.classList.remove("basis-full");
-      mapContainer.classList.add("basis-3/4");
-      toggleText.textContent = "▼"; // hide
-    } else {
-      panel.style.display = "none";
-      mapContainer.classList.remove("basis-3/4");
-      mapContainer.classList.add("basis-full");
-      toggleText.textContent = "▲"; // show
-    }
+    applyPanelState();
   });
 }
+
+// Keep correct on resize/orientation change
+window.addEventListener("resize", syncToggleUI);
+
+// Call this after you change language/dir in applyLanguage()
+window.syncPanelToggle = syncToggleUI;
+
 
 document.addEventListener("DOMContentLoaded", function () {
   const infoBtn = document.getElementById("infoBtn");
@@ -600,6 +660,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const infoTextAr = document.getElementById("infoTextAr");
 
   function syncInfoLang() {
+    if (!infoTextEn || !infoTextAr) return;
+
     if (popupLang === "ar") {
       infoTextEn.classList.add("hidden");
       infoTextAr.classList.remove("hidden");
