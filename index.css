@@ -133,27 +133,111 @@ html, body { margin:0; padding:0; height:100%; width:100%; }
   left: 14px;
   z-index: 20;
 }
-
-/* Popup above the button */
-.info-popup {
-  position: absolute;
-  bottom: 64px;   /* above button */
-  left: 14px;
-  z-index: 30;
+/* Popup container position */
+.info-popup{
+  position:absolute;
+  bottom:64px;
+  left:14px;
+  z-index:30;
 }
 
-.info-popup-content {
-  background: white;
-  border: 1px solid rgb(226 232 240);
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 13px;
-  color: #0f172a;
-  width: 220px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+/* Card */
+.info-card{
+  width: 520px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(226,232,240,0.9);
+  background: rgba(255,255,255,0.92);
+  box-shadow:
+    0 18px 45px rgba(2,6,23,0.18),
+    0 6px 16px rgba(2,6,23,0.10);
+  backdrop-filter: blur(10px);
+}
+
+/* Arabic (RTL) = smaller */
+.rtl .info-card{
+  width: 380px;
+}
+
+/* Header */
+.info-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+
+  background:#ffffff;
+  border-bottom:1px solid rgba(226,232,240,0.9);
+  padding:8px 12px;
+}
+
+/* Title */
+.info-card-title{
+  font-size:13.5px;
+  font-weight:800;
+  color:#0f172a;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Close button */
+.info-close-btn{
+  flex:0 0 auto;
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  border:1px solid rgba(226,232,240,0.9);
+  background:rgba(255,255,255,0.75);
+  color:#0f172a;
+  font-size:20px;
+  line-height:1;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.info-close-btn:hover{ background:rgba(248,250,252,0.95); }
+.info-close-btn:active{ background:rgba(241,245,249,0.95); }
+
+/* Body */
+.info-card-body{
+  padding:10px 12px 12px 12px;
+}
+
+/* Text */
+.info-text{
+  font-size:13.5px;
+  line-height:1.6;
+  color:#0f172a;
+  white-space:pre-line;
+}
+
+/* Better Arabic readability */
+.rtl .info-text{
+  font-family:"Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+/* Pointer */
+.info-pointer{
+  width:14px;
+  height:14px;
+  background:rgba(255,255,255,0.92);
+  border-left:1px solid rgba(226,232,240,0.9);
+  border-bottom:1px solid rgba(226,232,240,0.9);
+  transform:rotate(45deg);
+  margin-left:26px;
+  margin-top:-7px;
+  box-shadow:6px 10px 18px rgba(2,6,23,0.08);
+}
+
+/* RTL header flip */
+.rtl .info-card-header{
+  flex-direction:row-reverse;
 }
 
 /* Hide helper */
-.hidden {
-  display: none;
+.hidden{
+  display:none;
 }

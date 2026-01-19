@@ -31,16 +31,38 @@
     
 
     <div id="infoPopup" class="info-popup hidden">
-        <div id="infoTextEn" class="info-popup-content ltr">
-            This is placeholder English text.  
-            You can replace it later.
-        </div>
+  <div class="info-card">
+    <div class="info-card-header">
+      <div class="info-card-title" id="infoTitleEn">About this map</div>
+      <div class="info-card-title hidden" id="infoTitleAr">حول الخريطة</div>
 
-        <div id="infoTextAr" class="info-popup-content rtl hidden">
-            هذا نص عربي مؤقت.  
-            يمكنك تغييره لاحقًا.
-        </div>
+      <button id="infoCloseBtn" class="info-close-btn" type="button" aria-label="Close">×</button>
     </div>
+
+    <div class="info-card-body">
+      <div id="infoTextEn" class="info-text ltr">An interactive map that aims to display the key services that matter most to families and support data-driven decision-making.
+
+The data has been classified into three main categories:
+
+• Family Services: Includes education, healthcare, and family counseling centers.
+• Quality of Life: Includes parks, walking tracks, and sports facilities.
+• Family Cohesion: Includes neighborhood councils and community centers.
+      </div>
+
+      <div id="infoTextAr" class="info-text rtl hidden">خريطة تفاعلية تهدف إلى عرض الخدمات التي تهم الأسرة بشكل أساسي وتساهم في اتخاذ القرارات المبنية على البيانات.
+
+تم تصنيف البيانات إلى 3 فئات أساسية:
+
+• خدمات الأسرة: تشمل مراكز التعليم والصحة والإرشاد الأسري
+• جودة الحياة: تشمل الحدائق والمماشي والمرافق الرياضية
+• التماسك الأسري: يشمل مجالس الأحياء والمراكز المجتمعية
+      </div>
+    </div>
+  </div>
+
+  <div class="info-pointer" aria-hidden="true"></div>
+</div>
+
     <button id="infoBtn" class="map-fab map-fab-left-bottom">
         i
     </button>

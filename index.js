@@ -656,32 +656,77 @@ window.syncPanelToggle = syncToggleUI;
 document.addEventListener("DOMContentLoaded", function () {
   const infoBtn = document.getElementById("infoBtn");
   const infoPopup = document.getElementById("infoPopup");
+  const infoCloseBtn = document.getElementById("infoCloseBtn");
+
   const infoTextEn = document.getElementById("infoTextEn");
   const infoTextAr = document.getElementById("infoTextAr");
+  const infoTitleEn = document.getElementById("infoTitleEn");
+  const infoTitleAr = document.getElementById("infoTitleAr");
 
   function syncInfoLang() {
-    if (!infoTextEn || !infoTextAr) return;
+    const isAr = (popupLang === "ar");
 
-    if (popupLang === "ar") {
-      infoTextEn.classList.add("hidden");
-      infoTextAr.classList.remove("hidden");
-    } else {
-      infoTextAr.classList.add("hidden");
-      infoTextEn.classList.remove("hidden");
+    if (infoTextEn && infoTextAr) {
+      infoTextEn.classList.toggle("hidden", isAr);
+      infoTextAr.classList.toggle("hidden", !isAr);
+    }
+
+    if (infoTitleEn && infoTitleAr) {
+      infoTitleEn.classList.toggle("hidden", isAr);
+      infoTitleAr.classList.toggle("hidden", !isAr);
     }
   }
 
-  if (infoBtn && infoPopup) {
+  function openInfo() {
+    if (!infoPopup) return;
+    syncInfoLang();
+    infoPopup.classList.remove("hidden");
+  }
+
+  function closeInfo() {
+    if (!infoPopup) return;
+    infoPopup.classList.add("hidden");
+  }
+
+  function toggleInfo() {
+    if (!infoPopup) return;
+    const willOpen = infoPopup.classList.contains("hidden");
+    if (willOpen) openInfo();
+    else closeInfo();
+  }
+
+  // Open/Toggle by button
+  if (infoBtn) {
     infoBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      syncInfoLang();
-      infoPopup.classList.toggle("hidden");
-    });
-
-    document.addEventListener("click", function (e) {
-      if (!infoBtn.contains(e.target) && !infoPopup.contains(e.target)) {
-        infoPopup.classList.add("hidden");
-      }
+      toggleInfo();
     });
   }
+
+  // Close by "X" button (if exists)
+  if (infoCloseBtn) {
+    infoCloseBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      closeInfo();
+    });
+  }
+
+  // Click outside closes
+  document.addEventListener("click", function (e) {
+    if (!infoPopup || !infoBtn) return;
+    if (!infoBtn.contains(e.target) && !infoPopup.contains(e.target)) {
+      closeInfo();
+    }
+  });
+
+  // Optional: ESC closes
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeInfo();
+  });
+
+  // Expose a hook so your language toggle (applyLanguage) can update visible content
+  window.syncInfoPopupLang = function () {
+    if (!infoPopup) return;
+    if (!infoPopup.classList.contains("hidden")) syncInfoLang();
+  };
 });
