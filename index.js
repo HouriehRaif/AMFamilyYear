@@ -49,7 +49,7 @@ function geojsonPolygonToEsriPolygon(geom) {
 
 async function loadDistrictsMainMapLayer() {
   try {
-    const path = "./Features/AdministrativeBoundries/Districts.geoJSON?v=" + Date.now();
+    const path = "./Features/AdministrativeBoundries/Districts.geojson?v=" + Date.now();
     const res = await fetch(path);
     const geojson = await res.json();
 
