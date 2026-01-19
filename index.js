@@ -7,6 +7,39 @@ let districtsLayerMain = null;
 // Tabs
 let activeCategory = "All"; // "All" | "<category>"
 
+// ---- Image existence check (cached) ----
+const _imgExistsCache = new Map(); // url -> Promise<boolean>
+
+async function imageExists(url) {
+  if (!url) return false;
+
+  // cache Promise so parallel calls share the same request
+  if (_imgExistsCache.has(url)) return _imgExistsCache.get(url);
+
+  const p = (async () => {
+    try {
+      // Prefer HEAD (fast); if your server rejects HEAD we fall back to GET.
+      let res = await fetch(url, { method: "HEAD", cache: "no-store" });
+
+      if (res.status === 405 || res.status === 403) {
+        // fallback
+        res = await fetch(url, { method: "GET", cache: "no-store" });
+      }
+
+      return res.ok;
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  _imgExistsCache.set(url, p);
+  return p;
+}
+
+// Optional: expose for console testing only
+window.__imageExists = imageExists;
+
+
 require([
   "esri/Map",
   "esri/views/MapView",
@@ -24,7 +57,7 @@ require([
     ui: { components: [] }
   });
 
-// Load Districts main map layer //test
+// Load Districts main map layer 
 function geojsonPolygonToEsriPolygon(geom) {
   // Supports GeoJSON Polygon + MultiPolygon
   // Returns { type: "polygon", rings: [...] } or null
@@ -142,6 +175,7 @@ async function loadDistrictsMainMapLayer() {
     "Neighborhood_Councils": "مجالس الأحياء",
 
     "Sport_Clubs": "الأندية الرياضية",
+    "Running_Cycling_Track": "مسارات الركض وركوب الدراجات",
     "Parks": "الحدائق",
     "Open_Areas": "المناطق المفتوحة",
     "Public_Beaches": "الشواطئ العامة"
@@ -151,30 +185,59 @@ async function loadDistrictsMainMapLayer() {
 }
 
 
-  function buildPopupTemplate() {
-    const isAr = popupLang === "ar";
-    return new PopupTemplate({
-      title: isAr
-        ? "<div style='direction: rtl; text-align:right;'><strong>{NameAR}</strong></div>"
-        : "<strong>{NameEN}</strong>",
-      content: [{
-        type: "text",
-        text: isAr
-          ? (
-            "<div style='font-size:13px; line-height:1.8; direction:rtl; text-align:right;'>" +
-              "<p><strong>الاسم العربي:</strong> {name_ar}</p>" +
-              "<p><strong>النوع:</strong> {Cat_ar}</p>" +
-            "</div>"
-          )
-          : (
-            "<div style='font-size:13px; line-height:1.8; direction:ltr; text-align:left;'>" +
-              "<p><strong>English Name:</strong> {name_en}</p>" +
-              "<p><strong>Category:</strong> {Cat_en}</p>" +
-            "</div>"
-          )
-      }]
-    });
-  }
+function buildPopupTemplate() {
+  return new PopupTemplate({
+    title: function (event) {
+      const isAr = popupLang === "ar";
+      const a = (event && event.graphic && event.graphic.attributes) || {};
+
+      const t = isAr ? (a.NameAR || "") : (a.NameEN || "");
+      return isAr
+        ? "<div style='direction: rtl; text-align:right;'><strong>" + t + "</strong></div>"
+        : "<strong>" + t + "</strong>";
+    },
+
+    content: async function (event) {
+      const isAr = popupLang === "ar";
+      const g = event.graphic;
+      const a = g.attributes || {};
+
+      // ----- Base text content -----
+      const baseHtml = isAr
+        ? (
+          "<div style='font-size:13px; line-height:1.8; direction:rtl; text-align:right;'>" +
+            "<p><strong>الاسم:</strong> " + (a.name_ar || "") + "</p>" +
+            "<p><strong>النوع:</strong> " + (a.Cat_ar || "") + "</p>" +
+          "</div>"
+        )
+        : (
+          "<div style='font-size:13px; line-height:1.8; direction:ltr; text-align:left;'>" +
+            "<p><strong>Name:</strong> " + (a.name_en || "") + "</p>" +
+            "<p><strong>Category:</strong> " + (a.Cat_en || "") + "</p>" +
+          "</div>"
+        );
+
+      // ----- Optional image (absolute URL to survive popup sanitization) -----
+      const rel = (typeof a.ImgRelPath === "string") ? a.ImgRelPath.trim() : "";
+      const imgUrl = rel ? new URL(rel, window.location.href).href : "";
+
+      if (!imgUrl) return baseHtml;
+
+      const ok = await imageExists(imgUrl);
+      if (!ok) return baseHtml;
+
+      const imgHtml =
+        "<div style='margin-top:10px; width:100%; max-width:320px;'>" +
+          "<img src='" + imgUrl + "' alt='' " +
+          "style='width:100%; height:auto; display:block; border-radius:10px; border:1px solid rgba(0,0,0,0.15); min-height:120px; object-fit:contain;' />" +
+        "</div>";
+
+      return baseHtml + imgHtml;
+    }
+  });
+}
+
+
 
   function applyLanguage() {
     const isAr = popupLang === "ar";
@@ -487,9 +550,8 @@ function applyCategoryToMap() {
 
   async function loadGeoJSONLayers() {
     try {
-      const manifestResponse = await fetch("./manifest.json?v=${Date.now()}");
+      const manifestResponse = await fetch(`./manifest.json?v=${Date.now()}`);
       const manifest = await manifestResponse.json();
-        console.log("Manifest loaded:", manifest);
       for (const fileInfo of manifest.layers) {
         try {
           const geojsonResponse = await fetch(fileInfo.path);
@@ -498,21 +560,39 @@ function applyCategoryToMap() {
           const titleEN = formatLayerName(fileInfo.name);
           const titleAR = getArabicLayerName(fileInfo.name);
 
-          const graphics = geojson.features.map((feature, index) => ({
-            geometry: { type: "point", x: feature.geometry.coordinates[0], y: feature.geometry.coordinates[1] },
-            attributes: {
-              OBJECTID: feature.id || index,
-              NameEN: titleEN,
-              NameAR: titleAR,
-              ...feature.properties
-            }
-          }));
+          const graphics = geojson.features.map((feature, index) => {
+              const props = feature.properties || {};
+              const nameEn = (props.name_en ?? "").toString(); // keep exactly as-is (including spaces/case) for now
+              const folder = fileInfo.name; // matches your GeoJSON + Images folder naming
+
+              const imgRelPath = (folder && nameEn)
+                ? `./Features/Images/${folder}/${nameEn}.jpg`
+                : ""; // empty means "not computable"
+              return {
+                geometry: {
+                  type: "point",
+                  x: feature.geometry.coordinates[0],
+                  y: feature.geometry.coordinates[1]
+                },
+                attributes: {
+                  OBJECTID: feature.id || index,
+                  NameEN: titleEN,
+                  NameAR: titleAR,
+                  // new
+                  ImgRelPath: imgRelPath,
+
+                  ...props
+                }
+              };
+            });
+
 
           const iconUrl = `./Features/Icons/${fileInfo.name}.svg?v=${Date.now()}`;
 
           const layer = new FeatureLayer({
             source: graphics,
             objectIdField: "OBJECTID",
+            outFields: ["*"], 
             title: (popupLang === "ar") ? titleAR : titleEN,
             popupTemplate: buildPopupTemplate(),
             fields: [
@@ -523,7 +603,8 @@ function applyCategoryToMap() {
               { name: "name_ar", type: "string" },
               { name: "Cat_en", type: "string" },
               { name: "Cat_ar", type: "string" },
-              { name: "city", type: "string" }
+              { name: "city", type: "string" },
+              { name: "ImgRelPath", type: "string" } // <-- add
             ],
             renderer: {
               type: "simple",
