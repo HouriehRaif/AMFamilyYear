@@ -1,0 +1,4 @@
+{
+  "type" : "FeatureCollection",
+  "features" : [{"type":"Feature","id":0,"geometry":{"type":"Point","coordinates":[55.451280677000057,25.426756821000026]},"properties":{"FID":0,"name_ar":"شاطىء الزواء","name_en":"Al Zorah Beach","Cat_ar":"المساحات المفتوحة للأطفال وكبار السن","Cat_en":"Open Areas for Children & Seniors","x":25.426756820000001,"y":55.451280680000004}},{"type":"Feature","id":1,"geometry":{"type":"Point","coordinates":[55.516027578000035,25.363432837000062]},"properties":{"FID":1,"name_ar":"بدولاند عجمان","name_en":"Ajman Bado Land","Cat_ar":"المساحات المفتوحة للأطفال وكبار السن","Cat_en":"Open Areas for Children & Seniors","x":25.363432840000002,"y":55.516027579999999}}]
+}

@@ -1,7 +1,8 @@
 /* global require */
 
 let view;
-let popupLang = "en"; // "en" | "ar"
+let popupLang = "ar"; // "en" | "ar"
+let districtsLayerMain = null;
 
 // Tabs
 let activeCategory = "All"; // "All" | "<category>"
@@ -18,10 +19,108 @@ require([
   view = new MapView({
     container: "viewDiv",
     map,
-    center: [55.52737998962385, 25.402667492387888],
-    zoom: 14,
+    center: [55.52763748168928, 25.408637322230025],
+    zoom: 13,
     ui: { components: [] }
   });
+
+// Load Districts main map layer
+function geojsonPolygonToEsriPolygon(geom) {
+  // Supports GeoJSON Polygon + MultiPolygon
+  // Returns { type: "polygon", rings: [...] } or null
+  if (!geom || !geom.type || !geom.coordinates) return null;
+
+  if (geom.type === "Polygon") {
+    // coordinates: [ ring1, ring2(hole), ... ]
+    return { type: "polygon", rings: geom.coordinates };
+  }
+
+  if (geom.type === "MultiPolygon") {
+    // coordinates: [ [ring1, ring2...], [ring1, ring2...], ... ]
+    const rings = [];
+    for (const poly of geom.coordinates) {
+      for (const ring of poly) rings.push(ring);
+    }
+    return { type: "polygon", rings };
+  }
+
+  return null;
+}
+
+async function loadDistrictsMainMapLayer() {
+  try {
+    const path = "./Features/AdministrativeBoundries/Districts.geoJSON?v=" + Date.now();
+    const res = await fetch(path);
+    const geojson = await res.json();
+
+    const graphics = (geojson.features || [])
+      .map((feature, idx) => {
+        const poly = geojsonPolygonToEsriPolygon(feature.geometry);
+        if (!poly) return null;
+
+        return {
+          geometry: poly,
+          attributes: {
+            OBJECTID: feature.id ?? idx,
+            ...(feature.properties || {})
+          }
+        };
+      })
+      .filter(Boolean);
+
+    const isAr = popupLang === "ar";
+
+    const layer = new FeatureLayer({
+      title: (isAr ? "المناطق" : "Districts"),
+      source: graphics,
+      objectIdField: "OBJECTID",
+      fields: [
+        { name: "OBJECTID", type: "oid" },
+        { name: "ArabicName", type: "string" },
+        { name: "EnglishName", type: "string" }
+      ],
+      renderer: {
+        type: "simple",
+        symbol: {
+          type: "simple-fill",
+          style: "none",
+          outline: {
+            color: [255, 255, 255, 0.85],
+            width: 1.5
+          }
+        }
+      },
+      labelingInfo: [{
+        labelExpressionInfo: {
+          expression: isAr
+            ? "IIF(IsEmpty($feature.ArabicName), '', $feature.ArabicName)"
+            : "IIF(IsEmpty($feature.EnglishName), '', $feature.EnglishName)"
+        },
+        labelPlacement: "always-horizontal",
+        symbol: {
+          type: "text",
+          color: [255, 255, 255, 0.95],
+          haloColor: [0, 0, 0, 0.7],
+          haloSize: 1.5,
+          font: { size: 11, family: "Arial", weight: "bold" }
+        }
+      }],
+      labelsVisible: true,
+      popupEnabled: false,
+      visible: true
+    });
+
+    map.add(layer, 0); // keep underneath POI layers
+
+    districtsLayerMain = layer; // store globally
+
+    return layer;
+  } catch (e) {
+    console.log("Error loading Districts main map layer:", e);
+    return null;
+  }
+}
+
 
   // Track layers we add (so we can render our unified control list)
   // item shape: { layer, iconUrl, category }
@@ -30,19 +129,27 @@ require([
   function formatLayerName(name) { return (name || "").replace(/_/g, " "); }
 
   function getArabicLayerName(name) {
-    const mapAr = {
-      "Sport_Clubs": "الأندية الرياضية",
-      "Hospitals": "المستشفيات",
-      "Parks": "الحدائق",
-      "Running_Cycling_Track": "مسارات الجري والدراجات",
-      "Shopping_Centers": "مراكز التسوق",
-      "Nurseries": "الحضانات",
-      "Family_Psychological_Centers": "مراكز الإرشاد الأسري",
-      "Neighborhood_Councils": "مجالس الأحياء",
-      "Universities": "الجامعات"
-    };
-    return mapAr[name] || formatLayerName(name);
-  }
+  const mapAr = {
+    "Hospitals": "المستشفيات",
+    "Shopping_Centers": "مراكز التسوق",
+    "Nurseries": "الحضانات",
+    "Family_Psychological_Centers": "مراكز الإرشاد الأسري",
+    "Universities": "الجامعات",
+    "Schools": "المدارس",
+
+    "Community_Centers": "المراكز المجتمعية",
+    "Determination_Seniors_Centers": "مراكز أصحاب الهمم وكبار السن",
+    "Neighborhood_Councils": "مجالس الأحياء",
+
+    "Sport_Clubs": "الأندية الرياضية",
+    "Parks": "الحدائق",
+    "Open_Areas": "المناطق المفتوحة",
+    "Public_Beaches": "الشواطئ العامة"
+  };
+
+  return mapAr[name] || formatLayerName(name);
+}
+
 
   function buildPopupTemplate() {
     const isAr = popupLang === "ar";
@@ -91,6 +198,27 @@ require([
         body.setAttribute("dir", "ltr");
         body.classList.remove("rtl");
       }
+    }
+    // Refresh Districts labels based on language
+    if (districtsLayerMain) {
+      const isAr = popupLang === "ar";
+      districtsLayerMain.title = isAr ? "المناطق" : "Districts";
+      districtsLayerMain.labelingInfo = [{
+        labelExpressionInfo: {
+          expression: isAr
+            ? "IIF(IsEmpty($feature.ArabicName), '', $feature.ArabicName)"
+            : "IIF(IsEmpty($feature.EnglishName), '', $feature.EnglishName)"
+        },
+        labelPlacement: "always-horizontal",
+        symbol: {
+          type: "text",
+          color: [255, 255, 255, 0.95],
+          haloColor: [0, 0, 0, 0.7],
+          haloSize: 1.5,
+          font: { size: 11, family: "Arial", weight: "bold" }
+        }
+      }];
+      districtsLayerMain.labelsVisible = true;
     }
 
     renderUnifiedControls();
@@ -141,37 +269,64 @@ function applyCategoryToMap() {
     };
     return isAr ? (mapAr[cat] || cat) : cat;
   }
-
+  function getCategoryColor(cat) {
+  const mapCatColor = {
+        "All": "#64748b",              // slate
+        "Family Services": "#1f48ff",  // blue
+        "Quality of Life": "#9eff1f",  // green
+        "Family Cohesion": "#ff751f",  // orange
+        "Other": "#a1a1aa"             // gray
+    };
+    return mapCatColor[cat] || "#64748b";
+    }
   function buildTabs(host, categories) {
-    // segmented tabs that fill width (and scroll if needed)
     const tabsWrap = document.createElement("div");
     tabsWrap.className = "flex w-full items-center gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1";
 
-const activeCls =
-  "flex-1 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200";
-const inactiveCls =
-  "flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-white/70";
+    const activeBase =
+        "flex-1 rounded-xl px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-slate-200";
+    const inactiveBase =
+        "flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-white/70";
 
-    // All
+    function styleTab(btn, cat, isActive) {
+  const color = getCategoryColor(cat);
+
+  if (isActive) {
+    btn.className =
+      "flex-1 rounded-xl px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-slate-200";
+    btn.style.backgroundColor = color;
+    btn.style.color = "#fff";
+  } else {
+    btn.className =
+      "flex-1 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/70";
+    btn.style.backgroundColor = "";
+    btn.style.color = color;      // text uses category color
+    btn.style.borderColor = color;
+  }
+}
+
+
+    // ---- All tab ----
     const allBtn = document.createElement("button");
     allBtn.type = "button";
     allBtn.textContent = getCategoryLabel("All");
-    allBtn.className = (activeCategory === "All") ? activeCls : inactiveCls;
+    styleTab(allBtn, "All", activeCategory === "All");
     allBtn.addEventListener("click", function () { setActiveCategory("All"); });
     tabsWrap.appendChild(allBtn);
 
-    // Categories
+    // ---- Category tabs ----
     for (const cat of categories) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = getCategoryLabel(cat);
-      btn.className = (activeCategory === cat) ? activeCls : inactiveCls;
-      btn.addEventListener("click", function () { setActiveCategory(cat); });
-      tabsWrap.appendChild(btn);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = getCategoryLabel(cat);
+        styleTab(btn, cat, activeCategory === cat);
+        btn.addEventListener("click", function () { setActiveCategory(cat); });
+        tabsWrap.appendChild(btn);
     }
 
     host.appendChild(tabsWrap);
-  }
+}
+
 
   // ---- Unified Controls UI (tabs + filtered layers list) ----
   function renderUnifiedControls() {
@@ -331,9 +486,9 @@ const inactiveCls =
 
   async function loadGeoJSONLayers() {
     try {
-      const manifestResponse = await fetch("./manifest.json");
+      const manifestResponse = await fetch("./manifest.json?v=${Date.now()}");
       const manifest = await manifestResponse.json();
-
+        console.log("Manifest loaded:", manifest);
       for (const fileInfo of manifest.layers) {
         try {
           const geojsonResponse = await fetch(fileInfo.path);
@@ -405,9 +560,10 @@ const inactiveCls =
     }
   }
 
-  view.when(function () {
-    loadGeoJSONLayers();
-  });
+  view.when(async function () {
+  await loadDistrictsMainMapLayer();  // main map boundaries
+  await loadGeoJSONLayers();          // your manifest-driven POIs
+});
 });
 
 // ---- Bottom panel toggle button ----

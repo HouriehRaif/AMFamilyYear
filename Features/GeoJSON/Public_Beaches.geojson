@@ -1,0 +1,4 @@
+{
+  "type" : "FeatureCollection",
+  "features" : [{"type":"Feature","id":0,"geometry":{"type":"Point","coordinates":[55.429645045000029,25.40617811900006]},"properties":{"FID":0,"name_ar":"شاطىء عجمان","name_en":"Ajman Beach","Cat_ar":"الشواطئ العامة","Cat_en":"Public Beaches","x":25.40617812,"y":55.429645049999998}},{"type":"Feature","id":1,"geometry":{"type":"Point","coordinates":[55.451280677000057,25.426756821000026]},"properties":{"FID":1,"name_ar":"شاطئ الزوراء","name_en":"Al Zorah Public Beach","Cat_ar":"الشواطئ العامة","Cat_en":"Public Beaches","x":25.426756820000001,"y":55.451280680000004}}]
+}
