@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,36 +12,55 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./Index.css" />
-
 </head>
-<body id="appBody" class="h-screen w-screen overflow-hidden bg-slate-50">
-  <div class="h-full w-full flex flex-col">
-    <!-- MAP -->
-    <div id="mapContainer" class="basis-3/4 min-h-0 relative">
-      <div id="viewDiv" class="h-full w-full"></div>
-      <img 
-  src="./Images/logo_Family_map.svg" 
-  alt="Family Map Logo"
-  class="absolute top-3 left-3 z-10 w-[300px] h-auto select-none pointer-events-none"
-/>
 
-        <button id="panelToggleBtn" class="map-fab">
-            <span id="panelToggleText">▲</span>
-        </button>
-        <button id="popupLangBtn" type="button" class="map-fab map-fab-right">
-            <span id="popupLangBtnText">AR</span>
-        </button>
+<body id="appBody" dir="rtl" class="h-screen w-screen overflow-hidden bg-slate-50 rtl">
+  <div class="app-shell h-full w-full flex">
+
+    <!-- MAP -->
+    <div id="mapContainer" class="min-h-0 relative flex-1">
+      <div id="viewDiv" class="h-full w-full"></div>
+
+      <img 
+        src="./Images/logo_Family_map.svg" 
+        alt="Family Map Logo"
+        class="absolute top-3 left-3 z-10 w-[300px] h-auto select-none pointer-events-none"
+      />
+
+    
+
+    <div id="infoPopup" class="info-popup hidden">
+        <div id="infoTextEn" class="info-popup-content ltr">
+            This is placeholder English text.  
+            You can replace it later.
+        </div>
+
+        <div id="infoTextAr" class="info-popup-content rtl hidden">
+            هذا نص عربي مؤقت.  
+            يمكنك تغييره لاحقًا.
+        </div>
+    </div>
+    <button id="infoBtn" class="map-fab map-fab-left-bottom">
+        i
+    </button>
+      <button id="panelToggleBtn" class="map-fab">
+        <span id="panelToggleText">▲</span>
+      </button>
+      <button id="popupLangBtn" type="button" class="map-fab map-fab-right">
+        <span id="popupLangBtnText">AR</span>
+      </button>
+      
     </div>
 
     <!-- CONTROLS PANEL -->
-    <div id="panelContainer" class="basis-1/4 min-h-0 border-t border-slate-200 bg-white">
+    <div id="panelContainer" class="min-h-0 border-t border-slate-200 bg-white">
       <div class="h-full w-full flex flex-col">
         <div class="px-3 py-3 min-h-0 flex-1">
           <div class="h-full rounded-2xl border border-slate-200 bg-white overflow-hidden">
             <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2">
-                <div class="flex-1 min-w-0">
-                    <div id="categoryTabs" class="w-full flex items-stretch gap-1"></div>
-                </div>
+              <div class="flex-1 min-w-0">
+                <div id="categoryTabs" class="w-full flex items-stretch gap-1"></div>
+              </div>
             </div>
             <div id="panelControls" class="h-[calc(100%-41px)] overflow-auto p-2">
               <!-- Index.js fills this -->
@@ -50,9 +69,9 @@
         </div>
       </div>
     </div>
+
   </div>
 
-  <script src="./Index.js?v=20260116_1"></script>
+  <script src="./Index.js?v=20260119_1"></script>
 </body>
-
 </html>

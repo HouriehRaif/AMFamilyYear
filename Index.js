@@ -592,3 +592,34 @@ if (toggleBtn && panel && mapContainer) {
     }
   });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  const infoBtn = document.getElementById("infoBtn");
+  const infoPopup = document.getElementById("infoPopup");
+  const infoTextEn = document.getElementById("infoTextEn");
+  const infoTextAr = document.getElementById("infoTextAr");
+
+  function syncInfoLang() {
+    if (popupLang === "ar") {
+      infoTextEn.classList.add("hidden");
+      infoTextAr.classList.remove("hidden");
+    } else {
+      infoTextAr.classList.add("hidden");
+      infoTextEn.classList.remove("hidden");
+    }
+  }
+
+  if (infoBtn && infoPopup) {
+    infoBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      syncInfoLang();
+      infoPopup.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!infoBtn.contains(e.target) && !infoPopup.contains(e.target)) {
+        infoPopup.classList.add("hidden");
+      }
+    });
+  }
+});
